@@ -1,0 +1,180 @@
+-- Fly God Mode + Noclip com Painel Estiloso e Nome Preto
+local player = game.Players.LocalPlayer
+local UIS = game:GetService("UserInputService")
+local RS  = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+local flying = false
+local noclip = false
+local speed  = 60
+local minimized = false
+
+local char, hum, hrp
+
+-- Função para pegar personagem
+local function getChar()
+    local c = player.Character or player.CharacterAdded:Wait()
+    local h = c:FindFirstChildOfClass("Humanoid") or c:WaitForChild("Humanoid")
+    local r = c:FindFirstChild("HumanoidRootPart") or c:WaitForChild("HumanoidRootPart")
+    return c, h, r
+end
+
+local function setCollideAll(model, canCollide)
+    for _, v in ipairs(model:GetDescendants()) do
+        if v:IsA("BasePart") then
+            v.CanCollide = canCollide
+        end
+    end
+end
+
+char, hum, hrp = getChar()
+player.CharacterAdded:Connect(function()
+    flying, noclip = false, false
+    char, hum, hrp = getChar()
+end)
+
+-- Criando GUI
+local screenGui = Instance.new("ScreenGui", game.CoreGui)
+local frame = Instance.new("Frame", screenGui)
+frame.Size = UDim2.new(0, 240, 0, 280)
+frame.Position = UDim2.new(0.05, 0, 0.3, 0)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+frame.ClipsDescendants = true
+
+-- Nome do painel (preto)
+local titleLabel = Instance.new("TextLabel", frame)
+titleLabel.Size = UDim2.new(0, 240, 0, 40)
+titleLabel.Position = UDim2.new(0, 0, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.TextColor3 = Color3.fromRGB(0, 0, 0) -- preto
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 18
+titleLabel.Text = "NtzinnScripts"
+titleLabel.TextScaled = false
+
+-- Botão Minimizar (reposicionado)
+local minBtn = Instance.new("TextButton", frame)
+minBtn.Size = UDim2.new(0, 20, 0, 20)
+minBtn.Position = UDim2.new(0.75, 0, 0, 10)
+minBtn.Text = "_"
+minBtn.TextColor3 = Color3.fromRGB(255,255,255)
+minBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+minBtn.Font = Enum.Font.GothamBold
+minBtn.TextSize = 16
+minBtn.AutoButtonColor = true
+
+-- Botão Fechar (reposicionado)
+local closeBtn = Instance.new("TextButton", frame)
+closeBtn.Size = UDim2.new(0, 20, 0, 20)
+closeBtn.Position = UDim2.new(0.88, 0, 0, 10)
+closeBtn.Text = "X"
+closeBtn.TextColor3 = Color3.fromRGB(255,255,255)
+closeBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 16
+closeBtn.AutoButtonColor = true
+
+-- Label de velocidade
+local speedLabel = Instance.new("TextLabel", frame)
+speedLabel.Size = UDim2.new(0, 220, 0, 30)
+speedLabel.Position = UDim2.new(0, 10, 0, 240)
+speedLabel.BackgroundTransparency = 1
+speedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+speedLabel.Font = Enum.Font.GothamBold
+speedLabel.TextSize = 16
+speedLabel.Text = "Velocidade: "..speed
+
+-- Função para criar botões principais
+local function criarBotao(txt, posY)
+    local btn = Instance.new("TextButton", frame)
+    btn.Size = UDim2.new(0, 220, 0, 35)
+    btn.Position = UDim2.new(0, 10, 0, posY)
+    btn.BackgroundColor3 = Color3.fromRGB(80, 80, 200)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 18
+    btn.Text = txt
+    btn.AutoButtonColor = false
+    btn.MouseEnter:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(120,120,255) end)
+    btn.MouseLeave:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(80,80,200) end)
+    return btn
+end
+
+-- Criando botões
+local flyBtn = criarBotao("Ativar Fly", 50)
+local noclipBtn = criarBotao("Ativar Noclip", 100)
+local plusSpeedBtn = criarBotao("Aumentar Velocidade", 150)
+local minusSpeedBtn = criarBotao("Diminuir Velocidade", 200)
+
+-- Funções dos botões
+flyBtn.MouseButton1Click:Connect(function()
+    flying = not flying
+    flyBtn.Text = flying and "Desativar Fly" or "Ativar Fly"
+end)
+
+noclipBtn.MouseButton1Click:Connect(function()
+    noclip = not noclip
+    setCollideAll(char, not noclip)
+    noclipBtn.Text = noclip and "Desativar Noclip" or "Ativar Noclip"
+end)
+
+plusSpeedBtn.MouseButton1Click:Connect(function()
+    speed = speed + 10
+    speedLabel.Text = "Velocidade: "..speed
+end)
+
+minusSpeedBtn.MouseButton1Click:Connect(function()
+    speed = math.max(5, speed - 10)
+    speedLabel.Text = "Velocidade: "..speed
+end)
+
+-- Minimizar painel
+minBtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    for _, v in pairs({flyBtn, noclipBtn, plusSpeedBtn, minusSpeedBtn, speedLabel}) do
+        v.Visible = not minimized
+    end
+    frame.Size = minimized and UDim2.new(0,240,0,50) or UDim2.new(0,240,0,280)
+end)
+
+-- Fechar painel
+closeBtn.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
+-- Painel muda de cor clarinha
+spawn(function()
+    while true do
+        for i = 0,1,0.01 do
+            frame.BackgroundColor3 = Color3.fromHSV(i,0.3,0.9)
+            wait(0.03)
+        end
+    end
+end)
+
+-- Mantém noclip ativo
+RS.Stepped:Connect(function()
+    if noclip and char then
+        setCollideAll(char, false)
+    end
+end)
+
+-- Fly suave, sem animação de cair
+RS.RenderStepped:Connect(function(dt)
+    if not char or not hum then return end
+    hrp = char:FindFirstChild("HumanoidRootPart")
+    if flying and hrp then
+        local cam = workspace.CurrentCamera
+        local move = Vector3.new()
+        if UIS:IsKeyDown(Enum.KeyCode.W) then move += cam.CFrame.LookVector end
+        if UIS:IsKeyDown(Enum.KeyCode.S) then move -= cam.CFrame.LookVector end
+        if UIS:IsKeyDown(Enum.KeyCode.A) then move -= cam.CFrame.RightVector end
+        if UIS:IsKeyDown(Enum.KeyCode.D) then move += cam.CFrame.RightVector end
+        if UIS:IsKeyDown(Enum.KeyCode.Space) then move += Vector3.new(0,1,0) end
+        if UIS:IsKeyDown(Enum.KeyCode.LeftShift) then move -= Vector3.new(0,1,0) end
+        hrp.Velocity = move.Magnitude > 0 and move.Unit * speed or Vector3.new(0,0,0)
+        hrp.AssemblyAngularVelocity = Vector3.new(0,0,0)
+    end
+end)
